@@ -1,101 +1,57 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import data
+import treino
 
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression #logistic regression
+from sklearn import metrics #accuracy measure
 df = pd.read_csv('AA_TP1/Data/bank.csv')
 
 print(df.head())
 
-data = df.values
-X = data[:,0:-1]
-y = data[:,-1]
 
-print(X.shape)
-print(y.shape)
-y = y.reshape(y.shape[0],1)
-print(y.shape)
 
 print(df.isnull().sum())
 print(df.describe())
 print(df['deposit'].value_counts())
 print(df.dtypes)
 
-# Ver pie chart com a percentagem de depositos
-plt.pie(df['deposit'].value_counts(),labels=['no', 'yes'],autopct='%1.1f%%',  startangle=-90, colors=['lightcoral','lightgreen'])
-plt.title('Destribuição dos depositos')
-plt.show()
+# Visualização dos dados
+# data.vis(df)
 
-# Order os meses antes de os apresentar
-ordem_meses = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-df['month'] = pd.Categorical(
-    df['month'], 
-    categories=ordem_meses, 
-    ordered=True
-)
+# Preprocessamento dos dados
+df = data.preposessing(df)
 
-# Ver graficos de barras a distribuiçao de depositos por todas as variaveis categoricas tendo em conta o deposito para cada categoria usando 2 barras
-plt.figure(figsize=(20,10))
-df.groupby(['job', 'deposit']).size().unstack().plot(
-    kind='bar', 
-    stacked=False, 
-    ax=plt.gca(),
-    color=['lightcoral','lightgreen'],
-    edgecolor='black')
-plt.title('Distribution of deposits by job')
-plt.xlabel('job')
-plt.ylabel('Count')
-plt.xticks(rotation=0)
-plt.tight_layout()
-plt.show()
+# print(df)
+# print(df.describe())
+# df.to_csv('AA_TP1/Data/bank_preprocessed.csv', index=False)
 
+# Divisão dos dados em treino e teste
+split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=5)
+for train_index, test_index in split.split(df, df['deposit']):
+    train = df.loc[train_index]
+    test = df.loc[test_index]
 
-plt.figure(figsize=(20,10))
-i = 0
-for col in df.columns:
-    if (df[col].dtype == 'object' and col not in ['deposit', 'job']) or col == 'month':  
-        i += 1  
-        plt.subplot(4, 2, i)
-        df.groupby([col, 'deposit']).size().unstack().plot(
-            kind='bar', 
-            stacked=False, 
-            ax=plt.gca(),
-            color=['lightcoral','lightgreen'],
-            edgecolor='black')
-        plt.title(f'Distribution of deposits by {col}')
-        plt.xlabel(col)
-        plt.ylabel('Count')
-        plt.xticks(rotation=0)
-plt.tight_layout()
-plt.show()
+print("Ratio for train dataset")
+print(train['deposit'].value_counts()/train.shape[0])
+print()
+print("ratio for test dataset")
+print(test['deposit'].value_counts()/test.shape[0])
 
-        
-i = 0
-plt.figure(figsize=(20,10))
-for col in df.columns:
-    if df[col].dtype == 'int64':
-        i += 1
-        plt.subplot(4, 2, i)
+X_train = train.drop(columns=['deposit'])
+y_train = train['deposit']
 
-        yes_data = df[df['deposit'] == 'yes'][col]
-        no_data = df[df['deposit'] == 'no'][col]
-        total_data = df[col]
-        data_to_plot = [yes_data, no_data, total_data]
-        colors = ['lightgreen', 'lightcoral', 'lightblue']
-        boxprops = [dict(facecolor=color, color='blue') for color in colors]
+X_test = test.drop(columns=['deposit'])
+y_test = test['deposit']
 
-        bp = plt.boxplot(data_to_plot, labels=['Yes', 'No', 'Total'], patch_artist=True, 
-                vert=False,
-                medianprops=dict(color='red'),
-                whiskerprops=dict(color='blue'),
-                capprops=dict(color='blue'),
-                flierprops=dict(markerfacecolor='blue', marker='o', markersize=5, linestyle='none'))
+# Normalização dos dados
+scaler = StandardScaler()
 
-        for patch, color in zip(bp['boxes'], colors):
-            patch.set_facecolor(color)
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-        plt.title(f'BoxPlot of {col}')
-        plt.xlabel(col)
-        plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
+# Treino do modelo
+treino.rede_neural(X_train, y_train, X_test, y_test)
