@@ -54,4 +54,4 @@ X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 # Treino do modelo
-treino.rede_neural(X_train, y_train, X_test, y_test)
+treino.rede_neural2(X_train, y_train, X_test, y_test)
