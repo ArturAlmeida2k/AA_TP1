@@ -8,7 +8,9 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression #logistic regression
 from sklearn import metrics #accuracy measure
-df = pd.read_csv('AA_TP1/Data/bank.csv')
+
+
+df = pd.read_csv('Data/bank.csv')
 
 print(df.head())
 
@@ -54,4 +56,5 @@ X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 # Treino do modelo
-treino.rede_neural2(X_train, y_train, X_test, y_test)
+#treino.rede_neural2(X_train, y_train, X_test, y_test)
+treino.regressao_logistica(X_train, y_train, X_test, y_test)

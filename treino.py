@@ -3,6 +3,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 # Caso necessário, converta o target para formato numérico (0/1) se ainda não estiver
 # y_train = y_train.map({'no': 0, 'yes': 1})
@@ -112,3 +114,27 @@ def rede_neural2(X_train, y_train, X_test, y_test):
     y_pred = predict(Theta1, Theta2, X_test)
     accuracy = np.mean(y_pred.flatten() == y_test.values) * 100
     print(f"Acurácia da rede neural: {accuracy:.2f}%")
+
+    
+def regressao_logistica(X_train, y_train, X_test, y_test):
+
+    # Criar e treinar o modelo de Regressão Logística
+    log_reg = LogisticRegression(max_iter=1000)  # max_iter para garantir convergência
+    log_reg.fit(X_train, y_train)
+
+    # Fazer previsões no conjunto de teste
+    y_pred = log_reg.predict(X_test)
+
+    # Avaliar o modelo
+    accuracy = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
+
+    # Exibir resultados
+    print(f"Acurácia da Regressão Logística: {accuracy:.2f}")
+    print("\nRelatório de Classificação:")
+    print(report)
+    print("\nMatriz de Confusão:")
+    print(cm)
+
+    return accuracy, report, cm
