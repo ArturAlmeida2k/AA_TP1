@@ -1,10 +1,14 @@
 # Importações para a rede neural
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.regularizers import l2
+from sklearn.model_selection import RandomizedSearchCV
 
 # Caso necessário, converta o target para formato numérico (0/1) se ainda não estiver
 # y_train = y_train.map({'no': 0, 'yes': 1})
@@ -143,121 +147,79 @@ def regressao_logistica(X_train, y_train, X_test, y_test):
     return accuracy, report, cm
 
 
-def rede_neural3(df):
-    # Divisão inicial: 80% treino, 20% teste
+
+# Função para criar a rede neural
+def create_model(input_dim, hidden_size=50, learning_rate=0.001, lambda_reg=0.01):
+    model = Sequential([
+        Dense(hidden_size, activation='relu', kernel_regularizer=l2(lambda_reg), input_shape=(input_dim,)),
+        Dropout(0.3),
+        Dense(1, activation='sigmoid')
+    ])
+    model.compile(optimizer=Adam(learning_rate=learning_rate), loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
+# Função principal
+def rede_neural_dinamica(df):
+    # Divisão treino/teste (80/20)
     split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=5)
     for train_index, test_index in split.split(df, df['deposit']):
-        train = df.loc[train_index]
-        test = df.loc[test_index]
+        train, test = df.iloc[train_index], df.iloc[test_index]
 
-    # Separar features (X) e target (y)
-    X_train = train.drop(columns=['deposit'])
-    y_train = train['deposit']
-    X_test = test.drop(columns=['deposit'])
-    y_test = test['deposit']
+    # Pré-processamento
+    X_train, y_train = train.drop(columns=['deposit']).values, train['deposit'].values
+    X_test, y_test = test.drop(columns=['deposit']).values, test['deposit'].values
 
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)  # Ajusta e transforma o treino
-    X_test_scaled = scaler.transform(X_test)        # Apenas transforma o teste
+    X_train_scaled, X_test_scaled = scaler.fit_transform(X_train), scaler.transform(X_test)
 
-    # Hiperparâmetros para otimização
-    hidden_sizes = [20, 50]         # Testar diferentes tamanhos
-    alphas = [0.01, 0.001]          # Taxas de aprendizado
-    lambda_regs = [0.01, 0.1]       # Valores de regularização
-    best_accuracy = 0
+    input_dim = X_train.shape[1]
+
+    # Hiperparâmetros para testar manualmente
+    hidden_sizes = np.arange(10, 100, 20)  # Testa valores entre 10 e 90
+    learning_rates = [1e-4, 1e-3, 1e-2]
+    lambda_regs = [0.001, 0.01, 0.1, 1.0]
+
+    best_acc = 0
+    best_model = None
     best_params = {}
-    
-    # Validação cruzada para otimização
-    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=5)
-    
+
+    # Cross-validation manual
     for hidden_size in hidden_sizes:
-        for alpha in alphas:
+        for learning_rate in learning_rates:
             for lambda_reg in lambda_regs:
-                print(f"\nTestando: hidden={hidden_size}, alpha={alpha}, lambda={lambda_reg}")
-                fold_accuracies = []
-                
-                for train_idx, val_idx in kf.split(X_train, y_train):
-                    # Divisão dos dados
-                    X_tr, X_val = X_train[train_idx], X_train[val_idx]
-                    y_tr, y_val = y_train[train_idx], y_train[val_idx]
-                    
-                    # Inicialização Xavier/Glorot
-                    input_size = X_tr.shape[1]
-                    Theta1 = np.random.randn(hidden_size, input_size + 1) * np.sqrt(2/(input_size + hidden_size))
-                    Theta2 = np.random.randn(1, hidden_size + 1) * np.sqrt(2/(hidden_size + 1))
-                    
-                    # Treino com early stopping
-                    best_val_loss = float('inf')
-                    patience = 20
-                    wait = 0
-                    
-                    for epoch in range(1000):
-                        # Forward propagation
-                        X_bias = np.hstack([np.ones((X_tr.shape[0], 1)), X_tr])
-                        z1 = X_bias @ Theta1.T
-                        a1 = relu(z1)
-                        a1_bias = np.hstack([np.ones((a1.shape[0], 1)), a1])
-                        z2 = a1_bias @ Theta2.T
-                        a2 = sigmoid(z2)
-                        
-                        # Backpropagation com regularização
-                        error = a2 - y_tr.reshape(-1,1)
-                        delta2 = error.T @ a1_bias / X_tr.shape[0]
-                        delta1 = (error @ Theta2[:,1:] * (z1 > 0)) @ X_bias / X_tr.shape[0]
-                        
-                        # Regularização L2
-                        delta2 += (lambda_reg/X_tr.shape[0]) * np.hstack([np.zeros((Theta2.shape[0],1)), Theta2[:,1:]])
-                        delta1 += (lambda_reg/X_tr.shape[0]) * np.hstack([np.zeros((Theta1.shape[0],1)), Theta1[:,1:]])
-                        
-                        # Atualização de pesos
-                        Theta2 -= alpha * delta2
-                        Theta1 -= alpha * delta1
-                        
-                        # Early stopping
-                        val_pred = predict(Theta1, Theta2, X_val)
-                        val_acc = accuracy_score(y_val, val_pred)
-                        
-                        if val_acc > best_val_loss:
-                            best_val_loss = val_acc
-                            wait = 0
-                        else:
-                            wait += 1
-                            if wait >= patience:
-                                break
-                                
-                    fold_accuracies.append(val_acc)
-                
-                avg_acc = np.mean(fold_accuracies)
-                if avg_acc > best_accuracy:
-                    best_accuracy = avg_acc
+                print(f"Testando: hidden_size={hidden_size}, learning_rate={learning_rate}, lambda_reg={lambda_reg}")
+
+                model = create_model(input_dim, hidden_size, learning_rate, lambda_reg)
+
+                # Cross-validation
+                cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=5)
+                val_accs = []
+
+                for train_idx, val_idx in cv.split(X_train_scaled, y_train):
+                    X_train_cv, X_val_cv = X_train_scaled[train_idx], X_train_scaled[val_idx]
+                    y_train_cv, y_val_cv = y_train[train_idx], y_train[val_idx]
+
+                    model.fit(X_train_cv, y_train_cv, epochs=100, verbose=0, batch_size=32)
+                    val_acc = model.evaluate(X_val_cv, y_val_cv, verbose=0)[1]
+                    val_accs.append(val_acc)
+
+                mean_acc = np.mean(val_accs)
+                print(mean_acc)
+                # Verificar se é o melhor modelo até agora
+                if mean_acc > best_acc:
+                    best_acc = mean_acc
+                    best_model = model
                     best_params = {
-                        'hidden_size': hidden_size,
-                        'alpha': alpha,
-                        'lambda_reg': lambda_reg
+                        "hidden_size": hidden_size,
+                        "learning_rate": learning_rate,
+                        "lambda_reg": lambda_reg
                     }
-    
-    print(f"\nMelhores parâmetros: {best_params}")
-    
-    # Treino final com todos os dados de treino
-    input_size = X_train.shape[1]
-    Theta1 = np.random.randn(best_params['hidden_size'], input_size + 1) * np.sqrt(2/(input_size + best_params['hidden_size']))
-    Theta2 = np.random.randn(1, best_params['hidden_size'] + 1) * np.sqrt(2/(best_params['hidden_size'] + 1))
-    
-    for epoch in range(1000):
-        # ... (mesma lógica de treino com early stopping)
-    
-    # Avaliação final
-    y_pred = predict(Theta1, Theta2, X_test)
-    final_acc = accuracy_score(y_test, y_pred)
-    print(f"Acurácia final no teste: {final_acc:.2%}")
-    
-    return Theta1, Theta2
 
+    print("Melhores hiperparâmetros:", best_params)
+    print(f"Melhor acurácia de validação: {best_acc:.2%}")
 
-# Função de custo com regularização L2
-def compute_cost(a2, y, Theta1, Theta2, lambda_reg):
-    m = y.shape[0]
-    cost = -np.mean(y * np.log(a2) + (1 - y) * np.log(1 - a2))
-    reg = (lambda_reg/(2*m)) * (np.sum(Theta1[:,1:]**2) + np.sum(Theta2[:,1:]**2))
-    return cost + reg
+    # Avaliação no conjunto de teste
+    test_acc = best_model.evaluate(X_test_scaled, y_test, verbose=0)[1]
+    print(f"Acurácia no teste: {test_acc:.2%}")
 
+    return best_model
