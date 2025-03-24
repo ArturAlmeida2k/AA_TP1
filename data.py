@@ -1,6 +1,16 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+import numpy as np
+import seaborn as sns
+from sklearn.metrics import (
+    confusion_matrix,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    classification_report
+)
 
 def vis(df):
     # Ver pie chart com a percentagem de depositos
@@ -102,3 +112,33 @@ def preposessing(df):
 
 
     return df
+
+def evaluate_classification_model(model, X_test, y_test, y_pred=None):
+    if y_pred is None:
+        y_pred = model.predict(X_test)
+    
+    # Matriz de Confusão (versão texto para terminal)
+    cm = confusion_matrix(y_test, y_pred)
+    print("╭────── Confusion Matrix ───────╮")
+    print("│ Predicted:       No   |  Yes  │")
+    print("├───────────────┬───────┬───────┤")
+    print(f"│ Actual: No    │ {cm[0,0]:<6}│ {cm[0,1]:<6}│")
+    print(f"│ Actual: Yes   │ {cm[1,0]:<6}│ {cm[1,1]:<6}│")
+    print("╰───────────────┴───────┴───────╯")
+
+    
+    # Métricas
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    
+    print("\nClassification Metrics:")
+    print(f"Accuracy:  {accuracy*100:.4f} %")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall:    {recall:.4f}")
+    print(f"F1-Score:  {f1:.4f}")
+    
+    # Relatório completo
+    print("\nDetailed Classification Report:")
+    print(classification_report(y_test, y_pred))

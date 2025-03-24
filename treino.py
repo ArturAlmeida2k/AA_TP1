@@ -115,11 +115,12 @@ def rede_neural2(X_train, y_train, X_test, y_test):
 
     # Avaliação do modelo
     y_pred = predict(Theta1, Theta2, X_test)
-    accuracy = np.mean(y_pred.flatten() == y_test.values) * 100
-    print(f"Acurácia da rede neural: {accuracy:.2f}%")
-
+    #accuracy = np.mean(y_pred.flatten() == y_test.values) * 100
+    #print(f"Acurácia da rede neural: {accuracy:.2f}%")
+    return y_pred
     
 def regressao_logistica(X_train, y_train, X_test, y_test):
+<<<<<<< HEAD
 
     # Criar e treinar o modelo de Regressão Logística
     log_reg = LogisticRegression(max_iter=1000)  # max_iter para garantir convergência
@@ -261,3 +262,8 @@ def compute_cost(a2, y, Theta1, Theta2, lambda_reg):
     reg = (lambda_reg/(2*m)) * (np.sum(Theta1[:,1:]**2) + np.sum(Theta2[:,1:]**2))
     return cost + reg
 
+=======
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+    return model  # Retorna apenas o modelo treinado
+>>>>>>> f985f2825adb4c8bf9fe26ea31bffbf9578f3719

@@ -14,8 +14,6 @@ df = pd.read_csv('Data/bank.csv')
 
 print(df.head())
 
-
-
 print(df.isnull().sum())
 print(df.describe())
 print(df['deposit'].value_counts())
@@ -51,10 +49,11 @@ y_test = test['deposit']
 
 # Normalização dos dados
 scaler = StandardScaler()
-
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-# Treino do modelo
-#treino.rede_neural2(X_train, y_train, X_test, y_test)
-treino.regressao_logistica(X_train, y_train, X_test, y_test)
+logreg_model = treino.regressao_logistica(X_train, y_train, X_test, y_test)
+data.evaluate_classification_model(logreg_model, X_test, y_test)
+
+#y_pred = treino.rede_neural2(X_train, y_train, X_test, y_test)
+#data.evaluate_classification_model(model=None, X_test=X_test, y_test=y_test, y_pred=y_pred)
