@@ -134,7 +134,7 @@ def evaluate_classification_model(model, X_test, y_test, y_pred=None):
     f1 = f1_score(y_test, y_pred)
     
     print("\nClassification Metrics:")
-    print(f"Accuracy:  {accuracy:.4f}")
+    print(f"Accuracy:  {accuracy*100:.4f} %")
     print(f"Precision: {precision:.4f}")
     print(f"Recall:    {recall:.4f}")
     print(f"F1-Score:  {f1:.4f}")
