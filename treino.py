@@ -112,29 +112,11 @@ def rede_neural2(X_train, y_train, X_test, y_test):
 
     # Avaliação do modelo
     y_pred = predict(Theta1, Theta2, X_test)
-    accuracy = np.mean(y_pred.flatten() == y_test.values) * 100
-    print(f"Acurácia da rede neural: {accuracy:.2f}%")
-
+    #accuracy = np.mean(y_pred.flatten() == y_test.values) * 100
+    #print(f"Acurácia da rede neural: {accuracy:.2f}%")
+    return y_pred
     
 def regressao_logistica(X_train, y_train, X_test, y_test):
-
-    # Criar e treinar o modelo de Regressão Logística
-    log_reg = LogisticRegression(max_iter=1000)  # max_iter para garantir convergência
-    log_reg.fit(X_train, y_train)
-
-    # Fazer previsões no conjunto de teste
-    y_pred = log_reg.predict(X_test)
-
-    # Avaliar o modelo
-    accuracy = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
-    cm = confusion_matrix(y_test, y_pred)
-
-    # Exibir resultados
-    print(f"Acurácia da Regressão Logística: {accuracy:.2f}")
-    print("\nRelatório de Classificação:")
-    print(report)
-    print("\nMatriz de Confusão:")
-    print(cm)
-
-    return accuracy, report, cm
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+    return model  # Retorna apenas o modelo treinado
