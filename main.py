@@ -80,7 +80,7 @@ X_test = scaler.transform(X_test)
 
 #        -------------------------------- Tests ------------------------------------
 print("\n════════════════════════════════════ Tests ═════════════════════════════════════\n")
-print("Escolhe um modelo:")
+print("Escolha um modelo:")
 print("1 - Logistic Regression")
 print("2 - Neural Networks")
 print("3 - Neural Networks 2")

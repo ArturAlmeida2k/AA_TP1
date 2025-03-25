@@ -60,8 +60,10 @@ def rede_neural(X_train, y_train, X_test, y_test):
 def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
+
 def relu(z):
     return np.maximum(0, z)
+
 
 # Função de previsão para a rede neural
 def predict(Theta1, Theta2, X):
@@ -83,6 +85,7 @@ def predict(Theta1, Theta2, X):
     a2 = sigmoid(z2)
 
     return (a2 >= 0.5).astype(int)  # Ajustado para saída binária
+
 
 def rede_neural2(X_train, y_train, X_test, y_test):
     # Inicialização aleatória dos pesos da rede
@@ -130,7 +133,8 @@ def rede_neural2(X_train, y_train, X_test, y_test):
     #accuracy = np.mean(y_pred.flatten() == y_test.values) * 100
     #print(f"Acurácia da rede neural: {accuracy:.2f}%")
     return y_pred
-    
+
+
 def regressao_logistica(X_train, y_train, X_test, y_test):
 
     # Criar e treinar o modelo de Regressão Logística
@@ -142,6 +146,7 @@ def regressao_logistica(X_train, y_train, X_test, y_test):
 
     return log_reg, y_pred
 
+
 def svm_model(X_train, y_train, X_test, y_test):
 
     # 1. Configuração do modelo e parâmetros
@@ -149,7 +154,7 @@ def svm_model(X_train, y_train, X_test, y_test):
     
     svm = SVC(probability=True, random_state=5, class_weight='balanced')
     
-    # Espaço de busca enxuto (comente/descomente conforme necessidade)
+    # Espaço de busca para os hiperparâmetros
     param_grid = {
         'C': [0.1, 1, 10],           # Valores típicos em escala logarítmica
         'kernel': ['linear', 'rbf'],   # Kernels mais comuns
@@ -159,7 +164,7 @@ def svm_model(X_train, y_train, X_test, y_test):
     setup_time = time.time() - start_time
     print(f"[SVM] Configuração inicial: {setup_time:.2f}s")
 
-    # 2. Busca em grade (opcional: usar subamostra para tuning rápido)
+    # 2. Busca em grade 
     start_time = time.time()
     
     # Opção 1: Usar todos os dados (mais lento)
@@ -171,11 +176,6 @@ def svm_model(X_train, y_train, X_test, y_test):
         n_jobs=-1  # Paraleliza usando todos os núcleos
     )
     grid_search.fit(X_train, y_train)
-    
-    # Opção 2: Subamostra para tuning rápido (descomente para ativar)
-    # from sklearn.model_selection import train_test_split
-    # X_tune, _, y_tune, _ = train_test_split(X_train, y_train, train_size=0.3, random_state=5)
-    # grid_search.fit(X_tune, y_tune)
     
     search_time = time.time() - start_time
     print(f"[SVM] Busca em grade: {search_time:.2f}s")
@@ -209,6 +209,7 @@ def create_model(input_dim, hidden_size=50, learning_rate=0.001, lambda_reg=0.01
     ])
     model.compile(optimizer=Adam(learning_rate=learning_rate), loss='binary_crossentropy', metrics=['accuracy'])
     return model
+
 
 # Função principal
 def rede_neural_dinamica(df):
