@@ -12,12 +12,32 @@ from sklearn import metrics #accuracy measure
 
 df = pd.read_csv('Data/bank.csv')
 
+print("\n\n")
+print("╔══════════════════════════════════════╗")
+print("║       PRIMEIRAS LINHAS DO DATASET    ║")
+print("╚══════════════════════════════════════╝")
 print(df.head())
 
+print("\n╔══════════════════════════════════════╗")
+print("║     VERIFICAÇÃO DE VALORES NULOS     ║")
+print("╚══════════════════════════════════════╝")
 print(df.isnull().sum())
+
+print("\n╔══════════════════════════════════════╗")
+print("║     ESTATÍSTICAS DESCRITIVAS DO DF   ║")
+print("╚══════════════════════════════════════╝")
 print(df.describe())
+
+print("\n╔══════════════════════════════════════╗")
+print("║     DISTRIBUIÇÃO DA VARIÁVEL TARGET  ║")
+print("╚══════════════════════════════════════╝")
 print(df['deposit'].value_counts())
+
+print("\n╔══════════════════════════════════════╗")
+print("║     TIPOS DE DADOS POR COLUNA        ║")
+print("╚══════════════════════════════════════╝")
 print(df.dtypes)
+
 
 # Visualização dos dados
 # data.vis(df)
@@ -35,11 +55,16 @@ for train_index, test_index in split.split(df, df['deposit']):
     train = df.loc[train_index]
     test = df.loc[test_index]
 
-print("Ratio for train dataset")
-print(train['deposit'].value_counts()/train.shape[0])
-print()
-print("ratio for test dataset")
-print(test['deposit'].value_counts()/test.shape[0])
+print("\n╔══════════════════════════════════════╗")
+print("║    DISTRIBUIÇÃO TARGET NO TREINO     ║")
+print("╚══════════════════════════════════════╝")
+print(train['deposit'].value_counts() / train.shape[0])
+
+print("\n╔══════════════════════════════════════╗")
+print("║     DISTRIBUIÇÃO TARGET NO TESTE     ║")
+print("╚══════════════════════════════════════╝")
+print(test['deposit'].value_counts() / test.shape[0])
+
 
 X_train = train.drop(columns=['deposit'])
 y_train = train['deposit']
@@ -54,7 +79,7 @@ X_test = scaler.transform(X_test)
 
 
 #        -------------------------------- Tests ------------------------------------
-print("\n-------------------------------- Tests-------------------------------------\n")
+print("\n════════════════════════════════════ Tests ═════════════════════════════════════\n")
 print("Escolhe um modelo:")
 print("1 - Logistic Regression")
 print("2 - Neural Networks")
