@@ -115,7 +115,12 @@ def preposessing(df):
 
 def evaluate_classification_model(model, X_test, y_test, y_pred=None):
     if y_pred is None:
-        y_pred = model.predict(X_test)
+    # Se não for passado y_pred, tentamos gerar a partir do modelo
+        try:
+            y_pred_proba = model.predict(X_test)
+            y_pred = (y_pred_proba > 0.5).astype(int).flatten()
+        except:
+            y_pred = model.predict(X_test)
     
     # Matriz de Confusão (versão texto para terminal)
     cm = confusion_matrix(y_test, y_pred)

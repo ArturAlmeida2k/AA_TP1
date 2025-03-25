@@ -9,6 +9,9 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
+import time
 
 # Caso necessário, converta o target para formato numérico (0/1) se ainda não estiver
 # y_train = y_train.map({'no': 0, 'yes': 1})
@@ -39,13 +42,18 @@ def rede_neural(X_train, y_train, X_test, y_test):
     print(f"Precisão da rede neural no conjunto de teste: {accuracy:.2f}")
 
     # (Opcional) Visualização dos resultados do treinamento
-    import matplotlib.pyplot as plt
-    plt.plot(history.history['accuracy'], label='acurácia treinamento')
-    plt.plot(history.history['val_accuracy'], label='acurácia validação')
-    plt.xlabel('Época')
-    plt.ylabel('Acurácia')
-    plt.legend()
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.plot(history.history['accuracy'], label='acurácia treinamento')
+    # plt.plot(history.history['val_accuracy'], label='acurácia validação')
+    # plt.xlabel('Época')
+    # plt.ylabel('Acurácia')
+    # plt.legend()
+    # plt.show()
+
+    # Previsões para avaliação
+    y_pred = (model.predict(X_test) > 0.5).astype(int)
+
+    return model, y_pred
 
 
 # Função de ativação sigmoid
@@ -132,19 +140,63 @@ def regressao_logistica(X_train, y_train, X_test, y_test):
     # Fazer previsões no conjunto de teste
     y_pred = log_reg.predict(X_test)
 
-    # Avaliar o modelo
-    accuracy = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
-    cm = confusion_matrix(y_test, y_pred)
+    return log_reg, y_pred
 
-    # Exibir resultados
-    print(f"Acurácia da Regressão Logística: {accuracy:.2f}")
-    print("\nRelatório de Classificação:")
-    print(report)
-    print("\nMatriz de Confusão:")
-    print(cm)
+def svm_model(X_train, y_train, X_test, y_test):
 
-    return accuracy, report, cm
+    # 1. Configuração do modelo e parâmetros
+    start_time = time.time()
+    
+    svm = SVC(probability=True, random_state=5, class_weight='balanced')
+    
+    # Espaço de busca enxuto (comente/descomente conforme necessidade)
+    param_grid = {
+        'C': [0.1, 1, 10],           # Valores típicos em escala logarítmica
+        'kernel': ['linear', 'rbf'],   # Kernels mais comuns
+        'gamma': ['scale']             # Evita testar múltiplos gammas
+    }
+    
+    setup_time = time.time() - start_time
+    print(f"[SVM] Configuração inicial: {setup_time:.2f}s")
+
+    # 2. Busca em grade (opcional: usar subamostra para tuning rápido)
+    start_time = time.time()
+    
+    # Opção 1: Usar todos os dados (mais lento)
+    grid_search = GridSearchCV(
+        svm, 
+        param_grid, 
+        cv=5, 
+        scoring='accuracy', 
+        n_jobs=-1  # Paraleliza usando todos os núcleos
+    )
+    grid_search.fit(X_train, y_train)
+    
+    # Opção 2: Subamostra para tuning rápido (descomente para ativar)
+    # from sklearn.model_selection import train_test_split
+    # X_tune, _, y_tune, _ = train_test_split(X_train, y_train, train_size=0.3, random_state=5)
+    # grid_search.fit(X_tune, y_tune)
+    
+    search_time = time.time() - start_time
+    print(f"[SVM] Busca em grade: {search_time:.2f}s")
+
+    # 3. Avaliação do melhor modelo
+    start_time = time.time()
+    
+    best_svm = grid_search.best_estimator_
+    y_pred = best_svm.predict(X_test)
+    
+    eval_time = time.time() - start_time
+    print(f"[SVM] Predição no teste: {eval_time:.2f}s")
+
+    # 4. Relatório completo
+    print("\n" + "="*50)
+    print(f"Melhores parâmetros: {grid_search.best_params_}")
+    print(f"Acurácia do SVM: {accuracy_score(y_test, y_pred):.4f}")
+    print(f"Tempo total: {setup_time + search_time + eval_time:.2f}s")
+    print("="*50 + "\n")
+    
+    return y_pred
 
 
 
