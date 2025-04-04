@@ -40,7 +40,7 @@ print(df.dtypes)
 
 
 # Visualização dos dados
-# data.vis(df)
+data.vis(df)
 
 # Preprocessamento dos dados
 df = data.preposessing(df)
