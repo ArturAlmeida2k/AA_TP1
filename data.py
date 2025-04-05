@@ -5,14 +5,17 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import seaborn as sns
+from sklearn.model_selection import learning_curve
 from sklearn.metrics import (
     confusion_matrix,
     accuracy_score,
     precision_score,
     recall_score,
     f1_score,
-    classification_report
-)
+    classification_report,
+    roc_curve, 
+    auc
+    )
 
 
 
@@ -163,7 +166,46 @@ def preposessing(df):
 
     return df
 
-def evaluate_classification_model(model, X_test, y_test, y_pred=None):
+def plot_learning_curve(model, X, y, label):
+    train_sizes, train_scores, val_scores = learning_curve(
+        model, X, y,
+        train_sizes=np.linspace(0.1, 1.0, 5),
+        cv=5,
+        scoring='accuracy',
+        n_jobs=-1
+    )
+
+    train_scores_mean = train_scores.mean(axis=1)
+    val_scores_mean = val_scores.mean(axis=1)
+
+    plt.plot(train_sizes, train_scores_mean, 'o-', label='Treino')
+    plt.plot(train_sizes, val_scores_mean, 'o-', label='Validação')
+    plt.title(f"Learning Curve: {label}")
+    plt.xlabel("Tamanho do treino")
+    plt.ylabel("Acurácia")
+    plt.legend(loc='best')
+    plt.grid(True)
+    plt.show()
+
+def plot_roc(model, X_test, y_test, label):
+    y_score = model.predict_proba(X_test)[:, 1]  # Probabilidades da classe positiva
+
+    fpr, tpr, _ = roc_curve(y_test, y_score)
+    roc_auc = auc(fpr, tpr)
+
+    plt.plot(fpr, tpr, label=f'{label} (AUC = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], 'k--')  # linha base
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("Curva ROC")
+    plt.legend(loc='lower right')
+    plt.grid(True)
+    plt.show()
+
+def evaluate_classification_model(model, X_test, y_test, y_pred, label):
+
+    plot_learning_curve(model, X_test, y_test, label)
+    plot_roc(model, X_test, y_test, label)
     if y_pred is None:
     # Se não for passado y_pred, tentamos gerar a partir do modelo
         try:
@@ -197,3 +239,5 @@ def evaluate_classification_model(model, X_test, y_test, y_pred=None):
     # Relatório completo
     print("\nDetailed Classification Report:")
     print(classification_report(y_test, y_pred))
+
+

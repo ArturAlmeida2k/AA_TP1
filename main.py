@@ -14,33 +14,38 @@ df = pd.read_csv('Data/bank.csv')
 
 print("\n\n")
 print("╔══════════════════════════════════════╗")
-print("║       PRIMEIRAS LINHAS DO DATASET    ║")
+print("║       FIRST ROWS OF THE DATASET      ║")
 print("╚══════════════════════════════════════╝")
 print(df.head())
 
 print("\n╔══════════════════════════════════════╗")
-print("║     VERIFICAÇÃO DE VALORES NULOS     ║")
+print("║         MISSING VALUES CHECK         ║")
 print("╚══════════════════════════════════════╝")
 print(df.isnull().sum())
 
 print("\n╔══════════════════════════════════════╗")
-print("║     ESTATÍSTICAS DESCRITIVAS DO DF   ║")
+print("║        DESCRIPTIVE STATISTICS        ║")
 print("╚══════════════════════════════════════╝")
 print(df.describe())
 
 print("\n╔══════════════════════════════════════╗")
-print("║     DISTRIBUIÇÃO DA VARIÁVEL TARGET  ║")
+print("║      TARGET VARIABLE DISTRIBUTION    ║")
 print("╚══════════════════════════════════════╝")
 print(df['deposit'].value_counts())
 
 print("\n╔══════════════════════════════════════╗")
-print("║     TIPOS DE DADOS POR COLUNA        ║")
+print("║       DATA TYPES PER COLUMN          ║")
 print("╚══════════════════════════════════════╝")
 print(df.dtypes)
 
 
-# Visualização dos dados
-data.vis(df)
+# Data Visualization
+
+print("\n╔══════════════════════════════════════╗")
+print("║  DO YOU WANT TO VIEW THE DATA? [Y/N] ║")
+print("╚══════════════════════════════════════╝")
+if input().lower() in ['y', 'yes', 's', 'sim']:
+    data.vis(df)
 
 # Preprocessamento dos dados
 df = data.preposessing(df)
@@ -66,6 +71,7 @@ print("╚═══════════════════════�
 print(test['deposit'].value_counts() / test.shape[0])
 
 
+
 X_train = train.drop(columns=['deposit'])
 y_train = train['deposit']
 
@@ -80,34 +86,34 @@ X_test = scaler.transform(X_test)
 
 #        -------------------------------- Tests ------------------------------------
 print("\n════════════════════════════════════ Tests ═════════════════════════════════════\n")
-print("Escolha um modelo:")
-print("1 - Logistic Regression")
-print("2 - Neural Networks")
-print("3 - Neural Networks 2")
-print("4 - SVM")
+while True:
+    print("Escolha um modelo:")
+    print("1 - Logistic Regression")
+    print("2 - Neural Networks")
+    print("3 - SVM")
+    print("4 - Exit")
 
-opcao = input("Opção: ").strip()
+    opcao = input("Opção: ").strip()
 
-match opcao:
-    case "1": # (~80.30%)
-        print("\nExecutando Regressão Logística")
-        logreg_model, y_pred_logreg = treino.regressao_logistica(X_train, y_train, X_test, y_test)
-        data.evaluate_classification_model(logreg_model, X_test, y_test, y_pred_logreg)
+    match opcao:
+        case "1": # (~80.30%)
+            print("\nExecutando Regressão Logística")
+            logreg_model, y_pred_logreg = treino.regressao_logistica(X_train, y_train, X_test, y_test)
+            data.evaluate_classification_model(logreg_model, X_test, y_test, y_pred_logreg, "Logist Regression")
 
-    case "2": # (~80.92%)
-        print("\nExecutando Rede Neural 1")
-        model_rn, y_pred_rn = treino.rede_neural(X_train, y_train, X_test, y_test)
-        data.evaluate_classification_model(model_rn, X_test, y_test, y_pred_rn)
+        case "2": # (~82.17%)
+            print("\nExecutando Rede Neural")
+            model_rn, y_pred_rn = treino.neural_network(X_train, y_train, X_test, y_test)
+            data.evaluate_classification_model(model_rn, X_test, y_test, y_pred_rn, "Neural Network")
 
-    case "3": # (~79.49%)
-        print("\nExecutando Rede Neural 2")
-        y_pred = treino.rede_neural2(X_train, y_train, X_test, y_test)
-        data.evaluate_classification_model(model=None, X_test=X_test, y_test=y_test, y_pred=y_pred)
+        case "3": # (~80.30%)
+            print("\nExecutando SVM")
+            y_pred_svm = treino.svm_model(X_train, y_train, X_test, y_test)
+            data.evaluate_classification_model(None, X_test, y_test, y_pred_svm, "SVM")
 
-    case "4": # (~80.30%)
-        print("\nExecutando SVM")
-        y_pred_svm = treino.svm_model(X_train, y_train, X_test, y_test)
-        data.evaluate_classification_model(model=None, X_test=X_test, y_test=y_test, y_pred=y_pred_svm)
-
-    case _:
-        print("\nOpção inválida. Por favor escolha 1, 2, 3 ou 4.")
+        case "4":
+            print
+            break
+        
+        case _:
+            print("\nOpção inválida. Por favor escolha 1, 2 ou 3.")
