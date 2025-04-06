@@ -96,24 +96,24 @@ while True:
     opcao = input("Opção: ").strip()
 
     match opcao:
-        case "1": # (~80.30%)
+        case "1": # (~79.93%)
             print("\nExecutando Regressão Logística")
             logreg_model, y_pred_logreg = treino.regressao_logistica(X_train, y_train, X_test, y_test)
-            data.evaluate_classification_model(logreg_model, X_test, y_test, y_pred_logreg, "Logist Regression")
+            data.evaluate_classification_model(logreg_model, X_test, y_test, y_pred_logreg)
 
-        case "2": # (~82.17%)
+        case "2": # (~82%)
             print("\nExecutando Rede Neural")
             model_rn, y_pred_rn = treino.neural_network(X_train, y_train, X_test, y_test)
-            data.evaluate_classification_model(model_rn, X_test, y_test, y_pred_rn, "Neural Network")
+            data.evaluate_classification_model(model_rn, X_test, y_test, y_pred_rn)
 
-        case "3": # (~80.30%)
+        case "3": # (~80.03%)
             print("\nExecutando SVM")
             y_pred_svm = treino.svm_model(X_train, y_train, X_test, y_test)
-            data.evaluate_classification_model(None, X_test, y_test, y_pred_svm, "SVM")
+            data.evaluate_classification_model(None, X_test, y_test, y_pred_svm)
 
         case "4":
             print
             break
         
         case _:
-            print("\nOpção inválida. Por favor escolha 1, 2 ou 3.")
+            print("\nOpção inválida. Por favor escolha 1, 2, 3 ou 4.")
