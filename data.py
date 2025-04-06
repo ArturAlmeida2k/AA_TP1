@@ -1,42 +1,95 @@
 import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('TkAgg') 
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-import numpy as np
 import seaborn as sns
-from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import learning_curve
-from sklearn.base import clone
 from sklearn.metrics import (
     confusion_matrix,
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
     classification_report,
     roc_curve, 
-    auc
-    )
+    auc,
+    precision_recall_curve,
+    ConfusionMatrixDisplay
+)
 
+# Set backend for matplotlib
+plt.switch_backend('TkAgg')
 
-
-def vis(df):
-    # Pie chart showing deposit percentage distribution
+def visualize_data(df):
+    """Generate comprehensive data visualizations"""
+    # Target distribution pie chart
     plt.pie(df['deposit'].value_counts(), 
-            labels=['no', 'yes'],
+            labels=['No', 'Yes'],
             autopct='%1.1f%%',  
             startangle=-90, 
-            colors=['lightcoral','lightgreen'])
-    plt.title('Deposit Distribution')
+            colors=['lightcoral', 'lightgreen'])
+    plt.title('Subscription Distribution')
     plt.show()
 
-    # Order months chronologically before visualization
+    # Temporal ordering for months
     month_order = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
                    'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
     df['month'] = pd.Categorical(df['month'], categories=month_order, ordered=True)
 
-    # Bar chart: deposit distribution by job
+    # Categorical feature analysis
+    plot_categorical_distributions(df)
+    plot_numerical_distributions(df)
+    generate_correlation_heatmap(df)
+
+def preprocess_data(df):    
+    """Clean and transform raw data into machine-readable format"""
+    # Remove non-predictive feature
+    df = df.drop(columns=['duration'])
+
+    # Binary feature encoding
+    binary_map = {"yes": 1, "no": 0}
+    binary_features = ["deposit", "loan", "default", "housing"]
+    for feature in binary_features:
+        df[feature] = df[feature].map(binary_map).astype('int8') 
+
+    # Ordinal encoding for education levels
+    education_levels = {"primary": 0, "secondary": 1, "tertiary": 2, "unknown": -1}
+    df["education"] = df["education"].map(education_levels).astype('int8')
+
+    # Temporal feature encoding
+    month_order = {
+        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+    }
+    df["month"] = df["month"].map(month_order).astype(int)
+
+    # Nominal feature encoding
+    categorical_features = ["job", "marital", "contact", "poutcome"]
+    df = pd.get_dummies(df, columns=categorical_features, drop_first=False)
+
+    # Type conversion cleanup
+    bool_columns = df.select_dtypes('bool').columns
+    df[bool_columns] = df[bool_columns].astype(int)
+
+    return df
+
+def evaluate_model_performance(model, X_test, y_test, predictions):
+    """Generate comprehensive model evaluation metrics and visualizations"""
+    # Classification metrics report
+    print("\nClassification Metrics:\n")
+    print(classification_report(y_test, predictions))
+
+    # Confusion matrix visualization
+    cm = confusion_matrix(y_test, predictions)
+    ConfusionMatrixDisplay(cm, display_labels=['No', 'Yes']).plot(cmap='Blues')
+    plt.title("Confusion Matrix")
+    plt.grid(False)
+    plt.show()
+
+    # ROC curve analysis
+    generate_roc_curve(model, X_test, y_test)
+    
+    # Precision-Recall analysis
+    generate_precision_recall_curve(model, X_test, y_test)
+
+# Helper functions ------------------------------------------------------------
+
+def plot_categorical_distributions(df):
+    """Visualize distributions of categorical features"""
+    # Occupation analysis
     plt.figure(figsize=(15, 9))
     df.groupby(['job', 'deposit']).size().unstack().plot(
         kind='bar',
@@ -51,14 +104,14 @@ def vis(df):
     plt.tight_layout()
     plt.show()
 
-    # Bar charts: deposit distribution by each categorical variable
+    # Secondary categorical features
     plt.figure(figsize=(15, 9))
     i = 0
     for col in df.columns:
         if (df[col].dtype == 'object' and col not in ['deposit', 'job']) or col == 'month':
             i += 1
             plt.subplot(4, 2, i)
-            df.groupby([col, 'deposit']).size().unstack().plot(
+            df.groupby([col, 'deposit'], observed=False).size().unstack().plot(
                 kind='bar', 
                 stacked=False, 
                 ax=plt.gca(),
@@ -71,8 +124,9 @@ def vis(df):
     plt.tight_layout()
     plt.show()
 
-
-    # Histograms of numerical variables
+def plot_numerical_distributions(df):
+    """Visualize distributions of numerical features"""    
+    # Histograms
     plt.figure(figsize=(15, 9))
     i = 0
     for col in df.columns:
@@ -86,8 +140,7 @@ def vis(df):
     plt.tight_layout()
     plt.show()
 
-    
-    # Boxplots for numerical variables split by deposit
+    # Comparative boxplots
     plt.figure(figsize=(15, 9))
     i = 0
     for col in df.columns:
@@ -120,92 +173,60 @@ def vis(df):
     plt.tight_layout()
     plt.show()
 
-
-
-    # Correlation matrix heatmap
-    df_temp = df.copy()
-    df_temp['deposit'] = LabelEncoder().fit_transform(df_temp['deposit'])
-
+def generate_correlation_heatmap(df):
+    """Generate feature correlation matrix visualization"""
     plt.figure(figsize=(15, 9))
+    numeric_df = df.select_dtypes(include=['number'])
     sns.heatmap(
-        df_temp.select_dtypes(include=['number']).corr(),
+        numeric_df.corr(),
         annot=True,
         fmt=".2f",
         cmap="coolwarm",
-        vmin=-1, vmax=1,
+        vmin=-1, 
+        vmax=1,
         linewidths=0.5
     )
-    plt.title("Correlation Matrix of Numerical Variables", fontsize=14, pad=20)
-    plt.xticks(rotation=45, ha='right')
+    plt.title("Feature Correlation Matrix", fontsize=14)
+    plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
 
-def preposessing(df):
-    # Aplicar pré-processamento
-    dic = {"yes":1,"no":0}
-    lst = ["deposit","loan","default","housing"]
-    for i in lst:
-        df[i] = df[i].map(dic).astype(int)
+def generate_roc_curve(model, X_test, y_test):
+    """Generate ROC curve visualization"""
+    if hasattr(model, "predict_proba"):
+        scores = model.predict_proba(X_test)[:, 1]
+    else:
+        scores = model.decision_function(X_test)
 
-    # Education: primary < secondary < tertiary
-    education_order = {"primary": 0, "secondary": 1, "tertiary": 2, "unknown": -1}
-    df["education"] = df["education"].map(education_order).astype(int)
+    fpr, tpr, _ = roc_curve(y_test, scores)
+    roc_auc = auc(fpr, tpr)
 
-    # Month: Janeiro (1) a Dezembro (12)
-    month_order = {
-        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
-        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
-    }
-    df["month"] = df["month"].map(month_order).astype(int)
+    plt.figure()
+    plt.plot(fpr, tpr, color='darkorange', lw=2, 
+             label=f'ROC Curve (AUC = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.grid(True)
+    plt.show()
 
-    nominal_cols = ["job", "marital", "contact", "poutcome"]
-    df = pd.get_dummies(df, columns=nominal_cols, drop_first=False)  # Evitar multicolinearidade
+def generate_precision_recall_curve(model, X_test, y_test):
+    """Generate Precision-Recall curve visualization"""
+    if hasattr(model, "predict_proba"):
+        scores = model.predict_proba(X_test)[:, 1]
+    else:
+        scores = model.decision_function(X_test)
 
-    # Remover duração pois uma variavel futura
-    # df = df.drop(columns=['duration'])
-
-
-    # Convertendo colunas booleanas para inteiros
-    for column in df.columns:
-        if df[column].dtype == 'bool':
-            df[column] = df[column].astype(int)
-
-    return df
-
-def evaluate_classification_model(model, X_test, y_test, y_pred):
-   
-    if y_pred is None:
-    # Se não for passado y_pred, tentamos gerar a partir do modelo
-        try:
-            y_pred_proba = model.predict(X_test)
-            y_pred = (y_pred_proba > 0.5).astype(int).flatten()
-        except:
-            y_pred = model.predict(X_test)
+    precision, recall, _ = precision_recall_curve(y_test, scores)
     
-    # Matriz de Confusão (versão texto para terminal)
-    cm = confusion_matrix(y_test, y_pred)
-    print("╭────── Confusion Matrix ───────╮")
-    print("│ Predicted:       No   |  Yes  │")
-    print("├───────────────┬───────┬───────┤")
-    print(f"│ Actual: No    │ {cm[0,0]:<6}│ {cm[0,1]:<6}│")
-    print(f"│ Actual: Yes   │ {cm[1,0]:<6}│ {cm[1,1]:<6}│")
-    print("╰───────────────┴───────┴───────╯")
-
-    
-    # Métricas
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred)
-    recall = recall_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
-    
-    print("\nClassification Metrics:")
-    print(f"Accuracy:  {accuracy*100:.4f} %")
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall:    {recall:.4f}")
-    print(f"F1-Score:  {f1:.4f}")
-    
-    # Relatório completo
-    print("\nDetailed Classification Report:")
-    print(classification_report(y_test, y_pred))
-
-
+    plt.figure()
+    plt.plot(recall, precision, marker='.', color='darkorange')
+    plt.title('Precision-Recall Relationship')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.grid(True)
+    plt.show()
