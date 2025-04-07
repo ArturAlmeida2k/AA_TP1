@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import (
     confusion_matrix,
     classification_report,
@@ -60,6 +62,7 @@ def preprocess_data(df):
     categorical_features = ["job", "marital", "contact", "poutcome"]
     df = pd.get_dummies(df, columns=categorical_features, drop_first=False)
 
+
     # Type conversion cleanup
     bool_columns = df.select_dtypes('bool').columns
     df[bool_columns] = df[bool_columns].astype(int)
@@ -68,28 +71,24 @@ def preprocess_data(df):
 
 def evaluate_model_performance(model, X_test, y_test, predictions):
     """Generate comprehensive model evaluation metrics and visualizations"""
-    # Classification metrics report
+    
     print("\nClassification Metrics:\n")
-    print(classification_report(y_test, predictions))
+    print(classification_report(y_test, predictions, digits=4))
 
-    # Confusion matrix visualization
     cm = confusion_matrix(y_test, predictions)
     ConfusionMatrixDisplay(cm, display_labels=['No', 'Yes']).plot(cmap='Blues')
     plt.title("Confusion Matrix")
     plt.grid(False)
     plt.show()
 
-    # ROC curve analysis
     generate_roc_curve(model, X_test, y_test)
     
-    # Precision-Recall analysis
     generate_precision_recall_curve(model, X_test, y_test)
 
 # Helper functions ------------------------------------------------------------
 
 def plot_categorical_distributions(df):
     """Visualize distributions of categorical features"""
-    # Occupation analysis
     plt.figure(figsize=(15, 9))
     df.groupby(['job', 'deposit']).size().unstack().plot(
         kind='bar',
@@ -104,7 +103,6 @@ def plot_categorical_distributions(df):
     plt.tight_layout()
     plt.show()
 
-    # Secondary categorical features
     plt.figure(figsize=(15, 9))
     i = 0
     for col in df.columns:
@@ -126,7 +124,6 @@ def plot_categorical_distributions(df):
 
 def plot_numerical_distributions(df):
     """Visualize distributions of numerical features"""    
-    # Histograms
     plt.figure(figsize=(15, 9))
     i = 0
     for col in df.columns:
@@ -140,7 +137,6 @@ def plot_numerical_distributions(df):
     plt.tight_layout()
     plt.show()
 
-    # Comparative boxplots
     plt.figure(figsize=(15, 9))
     i = 0
     for col in df.columns:
@@ -175,19 +171,42 @@ def plot_numerical_distributions(df):
 
 def generate_correlation_heatmap(df):
     """Generate feature correlation matrix visualization"""
-    plt.figure(figsize=(15, 9))
-    numeric_df = df.select_dtypes(include=['number'])
+    df_temp = df.copy()
+    
+    if df_temp['deposit'].dtype == 'object':
+        df_temp['deposit'] = LabelEncoder().fit_transform(df_temp['deposit'])
+    
+    categorical_cols = df_temp.select_dtypes(include=['object', 'category']).columns
+    
+    for col in categorical_cols:
+        if col == 'month':
+            month_order = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                           'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+            df_temp[col] = df_temp[col].astype('category').cat.reorder_categories(month_order).cat.codes + 1
+
+        elif set(df_temp[col].unique()) == {'yes', 'no'}:
+            df_temp[col] = df_temp[col].map({'yes': 1, 'no': 0})
+
+        else:
+            df_temp[col] = LabelEncoder().fit_transform(df_temp[col])
+    
+    numeric_df = df_temp.select_dtypes(include=['number'])
+    
+    plt.figure(figsize=(18, 12))
     sns.heatmap(
         numeric_df.corr(),
         annot=True,
         fmt=".2f",
         cmap="coolwarm",
-        vmin=-1, 
+        vmin=-1,
         vmax=1,
-        linewidths=0.5
+        linewidths=0.5,
+        mask=np.triu(np.ones_like(numeric_df.corr(), dtype=bool))
     )
-    plt.title("Feature Correlation Matrix", fontsize=14)
-    plt.xticks(rotation=45)
+    
+    plt.title("Correlation Matrix Including All Encoded Variables", fontsize=14, pad=20)
+    plt.xticks(rotation=45, ha='right', fontsize=8)
+    plt.yticks(fontsize=8)
     plt.tight_layout()
     plt.show()
 

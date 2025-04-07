@@ -67,8 +67,6 @@ def neural_network(X_train, y_train, X_test, y_test):
         'regularization': 0.01,
         'max_epochs': 1000
     }
-
-    print(f"Training MLP with architecture: {architecture}")
     
     model = MLPClassifier(
         hidden_layer_sizes=architecture,
@@ -84,8 +82,6 @@ def neural_network(X_train, y_train, X_test, y_test):
     
     # Model evaluation
     predictions = model.predict(X_test)
-    accuracy = accuracy_score(y_test, predictions)
-    print(f"Test set accuracy: {accuracy:.2%}")
 
     # Training visualization
     plt.figure(figsize=(10, 4))
@@ -125,7 +121,7 @@ def dynamic_nn_search(X_train, y_train):
         cv=5,
         scoring='accuracy',
         n_jobs=-1,
-        verbose=2
+        verbose=1
     )
     
     search.fit(X_train, y_train)

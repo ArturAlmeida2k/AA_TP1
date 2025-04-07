@@ -72,7 +72,7 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-# Model selection interface
+# Model selection interfacen
 print("\n════════════════════════════════════ Model Testing ═════════════════════════════════════\n")
 while True:
     print("Choose a model:")
