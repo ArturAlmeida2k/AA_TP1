@@ -50,16 +50,18 @@ for train_index, test_index in split.split(df, df['deposit']):
     train_set = df.loc[train_index]
     test_set = df.loc[test_index]
 
-# Distribution analysis
+# Distribution and size analysis
 print("\n╔══════════════════════════════════════╗")
-print("║    Train Set Distribution            ║")
+print("║   Train Set Distribution and Size    ║")
 print("╚══════════════════════════════════════╝")
 print(train_set['deposit'].value_counts(normalize=True))
+print(train_set.shape[0])
 
 print("\n╔══════════════════════════════════════╗")
-print("║     Test Set Distribution            ║")
+print("║    Test Set Distribution and Size    ║")
 print("╚══════════════════════════════════════╝")
 print(test_set['deposit'].value_counts(normalize=True))
+print(test_set.shape[0])
 
 # Prepare features and target
 X_train = train_set.drop(columns=['deposit'])
@@ -77,8 +79,8 @@ print("\n═══════════════════════�
 while True:
     print("Choose a model:")
     print("1 - Logistic Regression ")
-    print("2 - Neural Network ")
-    print("3 - Support Vector Machine ")
+    print("2 - Support Vector Machine ")
+    print("3 - Neural Network ")
     print("4 - Get best SVM parameters")
     print("5 - Get best NN parameters")
     print("0 - Exit")
@@ -90,20 +92,20 @@ while True:
             print("\nRunning Logistic Regression")
             model, predictions = treino.logistic_regression(X_train, y_train, X_test, y_test)
             data.evaluate_model_performance(model, X_test, y_test, predictions)
+        
+        case "2": #(≈70% acc)
+            print("\nRunning SVM Classifier")
+            model, predictions = treino.svm(X_train, y_train, X_test, y_test)
+            data.evaluate_model_performance(model, X_test, y_test, predictions)
 
-        case "2": #(≈71% acc)
+        case "3": #(≈71% acc)
             print("\nTraining Neural Network")
             model, predictions = treino.neural_network(X_train, y_train, X_test, y_test)
             data.evaluate_model_performance(model, X_test, y_test, predictions)
 
-        case "3": #(≈70% acc)
-            print("\nRunning SVM Classifier")
-            model, predictions = treino.svm_classifier(X_train, y_train, X_test, y_test)
-            data.evaluate_model_performance(model, X_test, y_test, predictions)
-
         case "4": 
             print("\nRunning SVM Optimizer")
-            model = treino.optimized_svm(X_train, y_train, X_test, y_test)
+            model = treino.optimized_svm(X_train, y_train)
 
         case "5": 
             print("\nRunning NN Optimizer")

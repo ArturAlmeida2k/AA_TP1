@@ -62,11 +62,6 @@ def preprocess_data(df):
     categorical_features = ["job", "marital", "contact", "poutcome"]
     df = pd.get_dummies(df, columns=categorical_features, drop_first=False)
 
-
-    # Type conversion cleanup
-    bool_columns = df.select_dtypes('bool').columns
-    df[bool_columns] = df[bool_columns].astype(int)
-
     return df
 
 def evaluate_model_performance(model, X_test, y_test, predictions):
@@ -75,15 +70,15 @@ def evaluate_model_performance(model, X_test, y_test, predictions):
     print("\nClassification Metrics:\n")
     print(classification_report(y_test, predictions, digits=4))
 
+    generate_precision_recall_curve(model, X_test, y_test)
+
     cm = confusion_matrix(y_test, predictions)
     ConfusionMatrixDisplay(cm, display_labels=['No', 'Yes']).plot(cmap='Blues')
     plt.title("Confusion Matrix")
     plt.grid(False)
     plt.show()
-
-    generate_roc_curve(model, X_test, y_test)
     
-    generate_precision_recall_curve(model, X_test, y_test)
+    generate_roc_curve(model, X_test, y_test)
 
 # Helper functions ------------------------------------------------------------
 

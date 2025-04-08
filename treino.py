@@ -15,14 +15,14 @@ def logistic_regression(X_train, y_train, X_test, y_test):
     return model, predictions
 
 
-def svm_classifier(X_train, y_train, X_test, y_test):
+def svm(X_train, y_train, X_test, y_test):
     """Train and evaluate a baseline SVM classifier"""
     model = SVC(C=1, gamma='scale', kernel='rbf', random_state=42)
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
     return model, predictions
 
-def optimized_svm(X_train, y_train, X_test, y_test):
+def optimized_svm(X_train, y_train):
     """Perform hyperparameter optimization for SVM"""
     timer = {
         'setup': time.time(),
@@ -64,18 +64,19 @@ def neural_network(X_train, y_train, X_test, y_test):
     architecture = (10, 10, 20)
     hyperparams = {
         'learning_rate': 0.01,
-        'regularization': 0.01,
+        'alpha': 0.01,
         'max_epochs': 1000
     }
     
     model = MLPClassifier(
         hidden_layer_sizes=architecture,
         learning_rate_init=hyperparams['learning_rate'],
-        alpha=hyperparams['regularization'],
+        alpha=hyperparams['alpha'],
         max_iter=hyperparams['max_epochs'],
         early_stopping=True,
         random_state=42,
-        verbose=False
+        verbose=False,
+        n_iter_no_change=20
     )
 
     model.fit(X_train, y_train)
